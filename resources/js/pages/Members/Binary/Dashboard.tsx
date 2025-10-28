@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { Head, usePage } from "@inertiajs/react";
-import AddNodeModal from "./AddNodeModal";
-import AppLayout from "@/layouts/app-layout";
-import members from "@/routes/members";
-import type { PageProps, BreadcrumbItem } from "@/types";
-import type { BinaryNode, Payout } from "@/types/binary";
-import TreeView from "./Treeview";
+import AppLayout from '@/layouts/app-layout';
+import members from '@/routes/members';
+import type { BreadcrumbItem, PageProps } from '@/types';
+import type { BinaryNode, Payout } from '@/types/binary';
+import { Head, usePage } from '@inertiajs/react';
+import React, { useState } from 'react';
+import AddNodeModal from './AddNodeModal';
+import TreeView from './Treeview';
 
 export interface RegistrationPin {
     id: number;
@@ -25,7 +25,7 @@ interface Props extends PageProps {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: "Binary",
+        title: 'Binary',
         href: members.binary.dashboard.url(),
     },
 ];
@@ -38,42 +38,41 @@ const Dashboard: React.FC<Props> = () => {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Binary Dashboard" />
-            <div className="p-6 space-y-6">
-
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-semibold text-gray-800">
-                    Binary Dashboard
-                </h1>
-                <button
-                    onClick={() => setOpenModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-                >
-                    + Add Downline
-                </button>
-            </div>
-
-            {message && (
-                <div className="p-3 bg-yellow-50 border border-yellow-300 text-yellow-700 rounded-lg">
-                    {message}
+            <div className="space-y-6 p-6">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-semibold text-gray-800">
+                        Binary Dashboard
+                    </h1>
+                    <button
+                        onClick={() => setOpenModal(true)}
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                    >
+                        + Add Downline
+                    </button>
                 </div>
-            )}
 
-            {tree ? (
-                <TreeView
-                    rootNode={tree}
-                    maxDepth={4}
-                    nodeSize={72}
-                    levelGap={120}
-                />
-            ) : (
-                // <TreeView rootNode={tree} />
-                <div className="text-center py-20 text-gray-500">
-                    You are not yet placed in the binary tree.
-                </div>
-            )}
+                {message && (
+                    <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-yellow-700">
+                        {message}
+                    </div>
+                )}
 
-            {/* Payout Section */}
-            <section className="bg-white rounded-lg shadow p-4">
+                {tree ? (
+                    <TreeView
+                        rootNode={tree}
+                        maxDepth={4}
+                        nodeSize={72}
+                        levelGap={120}
+                    />
+                ) : (
+                    // <TreeView rootNode={tree} />
+                    <div className="py-20 text-center text-gray-500">
+                        You are not yet placed in the binary tree.
+                    </div>
+                )}
+
+                {/* Payout Section */}
+                {/* <section className="bg-white rounded-lg shadow p-4">
                 <h2 className="text-lg font-semibold mb-3">Recent Payouts</h2>
                 <table className="min-w-full border text-sm">
                     <thead>
@@ -116,13 +115,13 @@ const Dashboard: React.FC<Props> = () => {
                         )}
                     </tbody>
                 </table>
-            </section>
+            </section> */}
 
-            <AddNodeModal
-                open={openModal}
-                onClose={() => setOpenModal(false)}
-                pins={availablePins}
-            />
+                <AddNodeModal
+                    open={openModal}
+                    onClose={() => setOpenModal(false)}
+                    pins={availablePins}
+                />
             </div>
         </AppLayout>
     );

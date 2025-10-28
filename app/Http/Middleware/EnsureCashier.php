@@ -18,6 +18,11 @@ class EnsureCashier
                 : redirect()->route('login');
         }
 
+        // Allow superadmin full access
+        if ($user->utype === 'superadmin') {
+            return $next($request);
+        }
+
         if ($user->utype !== 'cashier') {
             if ($request->expectsJson()) {
                 abort(403, 'Only cashiers may access this resource.');

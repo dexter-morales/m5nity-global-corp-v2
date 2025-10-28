@@ -19,6 +19,7 @@ class MemberAccount extends Model
         'node',
         'upper_nodes',
         'member_type',
+        'is_main_account',
         'package_type',
         'rank_id',
         'remarks',
@@ -26,6 +27,7 @@ class MemberAccount extends Model
 
     protected $casts = [
         'upper_nodes' => 'array',
+        'is_main_account' => 'boolean',
     ];
 
     public function memberInfo()

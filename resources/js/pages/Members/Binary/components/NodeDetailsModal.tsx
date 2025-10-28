@@ -14,6 +14,25 @@ const NodeDetailsModal: React.FC<Props> = ({
 }) => {
     if (!node) return null;
 
+    const countDescendants = (start?: BinaryNode | null): number => {
+        if (!start) return 0;
+        let count = 0;
+        const stack: Array<BinaryNode | null | undefined> = [start];
+
+        while (stack.length > 0) {
+            const current = stack.pop();
+            if (!current) continue;
+            count += 1;
+            if (current.leftChild) stack.push(current.leftChild);
+            if (current.rightChild) stack.push(current.rightChild);
+        }
+
+        return count;
+    };
+
+    const leftDownlines = countDescendants(node.leftChild);
+    const rightDownlines = countDescendants(node.rightChild);
+
     const joinedAt = node.meta?.joined_at
         ? new Date(node.meta.joined_at).toLocaleDateString(undefined, {
               weekday: 'long',
@@ -23,16 +42,8 @@ const NodeDetailsModal: React.FC<Props> = ({
           })
         : 'Not available';
 
-    const leftGV =
-        node.meta?.left_group_value !== undefined &&
-        node.meta?.left_group_value !== null
-            ? node.meta.left_group_value
-            : 0;
-    const rightGV =
-        node.meta?.right_group_value !== undefined &&
-        node.meta?.right_group_value !== null
-            ? node.meta.right_group_value
-            : 0;
+    const leftGV = leftDownlines;
+    const rightGV = rightDownlines;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">

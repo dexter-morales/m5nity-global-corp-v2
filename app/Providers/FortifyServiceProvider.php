@@ -31,6 +31,7 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->configureRedirects();
     }
 
     /**
@@ -87,5 +88,23 @@ class FortifyServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by($throttleKey);
         });
+    }
+
+    /**
+     * Configure post-authentication redirects based on user type.
+     */
+    private function configureRedirects(): void
+    {
+        // Register custom LoginResponse for role-based redirects
+        $this->app->singleton(
+            \Laravel\Fortify\Contracts\LoginResponse::class,
+            \App\Http\Responses\LoginResponse::class
+        );
+
+        // Register custom TwoFactorLoginResponse for role-based redirects after 2FA
+        $this->app->singleton(
+            \Laravel\Fortify\Contracts\TwoFactorLoginResponse::class,
+            \App\Http\Responses\TwoFactorLoginResponse::class
+        );
     }
 }

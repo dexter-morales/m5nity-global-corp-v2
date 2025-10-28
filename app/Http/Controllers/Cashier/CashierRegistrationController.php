@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\MemberAccount;
 use App\Models\MemberInfo;
 use App\Models\MemberPin;
+use App\Models\Package;
+use App\Models\PaymentMethod;
 use App\Models\TransactionHistory;
 use App\Models\User;
 use App\Support\IdentifierGenerator;
@@ -62,9 +64,39 @@ class CashierRegistrationController extends Controller
 
         $this->writeControllerLog(self::LOG_FILE, 'info', 'Loaded cashier registration dashboard.', ['cashier_user_id' => $user?->id]);
 
+        // Get payment methods
+        $paymentMethods = PaymentMethod::active()->get(['id', 'name', 'code']);
+
+        // Get active packages with products for registration
+        $packages = Package::active()
+            ->with(['products:id,name,sku,price,stock_quantity'])
+            ->get(['id', 'name', 'code', 'description', 'price', 'status'])
+            ->map(function ($package) {
+                return [
+                    'id' => $package->id,
+                    'name' => $package->name,
+                    'code' => $package->code,
+                    'description' => $package->description,
+                    'price' => $package->price,
+                    'products_count' => $package->products->count(),
+                    'products' => $package->products->map(function ($product) {
+                        return [
+                            'id' => $product->id,
+                            'name' => $product->name,
+                            'sku' => $product->sku,
+                            'price' => $product->price,
+                            'stock_quantity' => $product->stock_quantity,
+                            'quantity' => $product->pivot->quantity ?? 1,
+                        ];
+                    }),
+                ];
+            });
+
         return Inertia::render('Cashier/Registration', [
             'accounts' => $accounts,
             'transactions' => $transactions,
+            'paymentMethods' => $paymentMethods,
+            'packages' => $packages,
             'profile' => $profile ? [
                 'first_name' => $profile->first_name,
                 'middle_name' => $profile->middle_name,
@@ -92,6 +124,7 @@ class CashierRegistrationController extends Controller
             'last_name' => 'required|string|max:100',
             'mobile_number' => 'required|string|max:25',
             'email' => 'required|email|unique:users,email|unique:members_info,email',
+            'package_id' => 'required|exists:packages,id',
         ]);
 
         $cashierId = Auth::id();
@@ -131,6 +164,9 @@ class CashierRegistrationController extends Controller
 
             $codes = IdentifierGenerator::generateTransactionNumber();
 
+            // Get package details
+            $package = Package::find($validated['package_id']);
+
             $memberPin = MemberPin::create([
                 'sponsor_id' => $validated['sponsor_account_id'] ?? null,
                 'trans_no' => $codes['transaction'],
@@ -159,6 +195,12 @@ class CashierRegistrationController extends Controller
                     'pin' => $codes['pin'],
                     'kick_start_token' => $kickStartToken,
                     'member_pin_id' => $memberPin->id,
+                    'package' => $package ? [
+                        'id' => $package->id,
+                        'name' => $package->name,
+                        'code' => $package->code,
+                        'price' => $package->price,
+                    ] : null,
                 ],
             ];
 

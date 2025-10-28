@@ -18,6 +18,11 @@ class EnsureMember
                 : redirect()->route('login');
         }
 
+        // Allow superadmin full access
+        if ($user->utype === 'superadmin') {
+            return $next($request);
+        }
+
         $isMember = ($user->utype === 'member') || method_exists($user, 'memberInfo') && $user->memberInfo()->exists();
 
         if (! $isMember) {
@@ -25,9 +30,18 @@ class EnsureMember
                 abort(403, 'Only members may access this resource.');
             }
 
-            // Redirect authenticated non-members to a safe landing
+            // Redirect authenticated non-members to their appropriate dashboards
             if ($user->utype === 'cashier' && \Route::has('cashier.registrations.index')) {
                 return redirect()->route('cashier.registrations.index');
+            }
+            if ($user->utype === 'releasing_personnel' && \Route::has('releasing.dashboard')) {
+                return redirect()->route('releasing.dashboard');
+            }
+            if ($user->utype === 'accounting' && \Route::has('accounting.dashboard')) {
+                return redirect()->route('accounting.dashboard');
+            }
+            if (($user->utype === 'admin' || $user->utype === 'super_admin') && \Route::has('admin.dashboard')) {
+                return redirect()->route('admin.dashboard');
             }
 
             return redirect()->route('home');

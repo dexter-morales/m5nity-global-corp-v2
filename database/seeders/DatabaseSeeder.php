@@ -18,9 +18,18 @@ class DatabaseSeeder extends Seeder
         $this->call([
             MasterPasswordSeeder::class,
             GenealogySeeder::class,
-            BackfillMemberUtypeSeeder::class,
             StaffProfileSeeder::class,
-            SamplePinsSeeder::class,
+            // SamplePinsSeeder::class,
+            ProductSeeder::class,
+            CompensationSettingsSeeder::class,
+            PaymentMethodSeeder::class,
+            ReleasingPersonnelSeeder::class,
+            InventorySeeder::class,
+            BackfillMemberUtypeSeeder::class,
+            CompanySettingSeeder::class,
+
+
+
             // BinaryNodeSeeder::class,
         ]);
     }

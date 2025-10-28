@@ -38,14 +38,71 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
+        $user = $request->user();
+        $accounts = [];
+        $activeAccountId = null;
+
+        if ($user && method_exists($user, 'memberInfo')) {
+            $user->loadMissing('memberInfo.accounts');
+            $memberInfo = $user->memberInfo;
+
+            if ($memberInfo && $memberInfo->accounts) {
+                $accountsCollection = $memberInfo->accounts->map(function ($account) {
+                    $explicitMain = $account->is_main_account;
+                    $fallbackMain = in_array($account->member_type, ['root', 'main'], true)
+                        || is_null($account->under_sponsor);
+                    $isMain = $explicitMain ?? $fallbackMain;
+
+                    return [
+                        'id' => $account->id,
+                        'name' => $account->account_name,
+                        'package_type' => $account->package_type,
+                        'member_type' => $account->member_type,
+                        'is_main' => $isMain,
+                        'is_main_account' => $account->is_main_account,
+                    ];
+                });
+
+                $accountsCollection = $accountsCollection
+                    ->sortByDesc(fn ($account) => $account['is_main'] ? 1 : 0)
+                    ->values();
+
+                $accounts = $accountsCollection->all();
+
+                $requestedAccountId = $request->query('account');
+                $sessionAccountId = $request->session()->get('active_member_account_id');
+
+                $activeAccountId = $requestedAccountId
+                    ? (int) $requestedAccountId
+                    : ($sessionAccountId ? (int) $sessionAccountId : null);
+
+                $activeAccountExists = $activeAccountId !== null
+                    && $accountsCollection->contains('id', $activeAccountId);
+
+                if (! $activeAccountExists) {
+                    $primaryAccount = $accountsCollection->firstWhere('is_main', true)
+                        ?? $accountsCollection->first();
+
+                    $activeAccountId = $primaryAccount['id'] ?? null;
+                }
+
+                if ($activeAccountId !== null) {
+                    $request->session()->put('active_member_account_id', $activeAccountId);
+                }
+            }
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
+                'accounts' => $accounts,
+                'activeAccountId' => $activeAccountId,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'companySettings' => fn () => company_settings(),
         ];
     }
 }

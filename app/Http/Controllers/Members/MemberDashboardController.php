@@ -95,7 +95,7 @@ class MemberDashboardController extends Controller
         $this->writeControllerLog(self::LOG_FILE, 'info', 'Dashboard payload prepared.', ['user_id' => $user?->id, 'tree_present' => (bool) $tree]);
 
         return Inertia::render('Members/Binary/Dashboard', [
-            'auth' => ['user' => $user],
+            'auth' => ['user' => $user, ],
             'tree' => $tree,
             'payouts' => $payouts,
             'message' => $message,

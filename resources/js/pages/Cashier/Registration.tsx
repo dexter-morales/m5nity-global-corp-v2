@@ -1,16 +1,27 @@
 ﻿import AppLayout from '@/layouts/app-layout';
-// import cashier from '@/routes/cashier';
 import cashier from '@/routes/cashier';
 
-import { notifyError } from '@/lib/notifier';
-import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { notifyError } from '@/lib/notifier';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import React from 'react';
 
-// import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+type PaymentMethod = {
+    id: number;
+    name: string;
+    code: string;
+};
 
 type AccountOption = {
     id: number;
@@ -28,9 +39,30 @@ type TransactionRecord = {
     created_at?: string | null;
 };
 
+type PackageProduct = {
+    id: number;
+    name: string;
+    sku: string;
+    price: number;
+    stock_quantity: number;
+    quantity: number;
+};
+
+type PackageOption = {
+    id: number;
+    name: string;
+    code: string;
+    description?: string | null;
+    price: number;
+    products_count: number;
+    products: PackageProduct[];
+};
+
 interface PageProps extends Record<string, unknown> {
     accounts: AccountOption[];
     transactions: TransactionRecord[];
+    paymentMethods: PaymentMethod[];
+    packages: PackageOption[];
     profile?: {
         first_name: string;
         middle_name?: string | null;
@@ -53,7 +85,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const Registration: React.FC = () => {
     const { props } = usePage<PageProps>();
-    const { accounts = [], transactions = [], flash, profile } = props;
+    const {
+        accounts = [],
+        transactions = [],
+        paymentMethods = [],
+        packages = [],
+        flash,
+        profile,
+    } = props;
 
     const form = useForm({
         payment_method: '',
@@ -63,7 +102,12 @@ const Registration: React.FC = () => {
         last_name: '',
         mobile_number: '',
         email: '',
+        package_id: '',
     });
+
+    const selectedPackage = packages.find(
+        (pkg) => pkg.id.toString() === form.data.package_id,
+    );
 
     const submit = (event: React.FormEvent) => {
         event.preventDefault();
@@ -86,6 +130,7 @@ const Registration: React.FC = () => {
                     'last_name',
                     'mobile_number',
                     'email',
+                    'package_id',
                 );
                 // Refresh transactions list reactively
                 router.reload({ only: ['transactions'] });
@@ -214,16 +259,112 @@ const Registration: React.FC = () => {
                                 error={form.errors.email}
                                 required
                             />
-                            <FormField
-                                label="Payment Method"
-                                value={form.data.payment_method}
-                                onChange={(value) =>
-                                    form.setData('payment_method', value)
-                                }
-                                error={form.errors.payment_method}
-                                required
-                                placeholder="e.g. GCash, Bank Transfer"
-                            />
+                            <div>
+                                <Label>
+                                    Payment Method
+                                    <span className="text-red-600">*</span>
+                                </Label>
+                                <Select
+                                    value={form.data.payment_method}
+                                    onValueChange={(value) =>
+                                        form.setData('payment_method', value)
+                                    }
+                                >
+                                    <SelectTrigger
+                                        className={
+                                            form.errors.payment_method
+                                                ? 'border-red-500'
+                                                : ''
+                                        }
+                                    >
+                                        <SelectValue placeholder="Select payment method" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {paymentMethods.map((pm) => (
+                                            <SelectItem
+                                                key={pm.id}
+                                                value={pm.name}
+                                            >
+                                                {pm.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {form.errors.payment_method && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {form.errors.payment_method}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-1">
+                            <div>
+                                <Label>
+                                    Registration Package
+                                    <span className="text-red-600">*</span>
+                                </Label>
+                                <Select
+                                    value={form.data.package_id}
+                                    onValueChange={(value) =>
+                                        form.setData('package_id', value)
+                                    }
+                                >
+                                    <SelectTrigger
+                                        className={
+                                            form.errors.package_id
+                                                ? 'border-red-500'
+                                                : ''
+                                        }
+                                    >
+                                        <SelectValue placeholder="Select package" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {packages.map((pkg) => (
+                                            <SelectItem
+                                                key={pkg.id}
+                                                value={pkg.id.toString()}
+                                            >
+                                                {pkg.name} - ₱
+                                                {parseFloat(
+                                                    pkg.price.toString(),
+                                                ).toFixed(2)}{' '}
+                                                ({pkg.products_count} products)
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {form.errors.package_id && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {form.errors.package_id}
+                                    </p>
+                                )}
+                                {selectedPackage && (
+                                    <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                        <p className="text-sm font-semibold text-slate-700">
+                                            Package Contents:
+                                        </p>
+                                        <ul className="mt-2 space-y-1 text-xs text-slate-600">
+                                            {selectedPackage.products.map(
+                                                (product) => (
+                                                    <li
+                                                        key={product.id}
+                                                        className="flex justify-between"
+                                                    >
+                                                        <span>
+                                                            {product.quantity}x{' '}
+                                                            {product.name}
+                                                        </span>
+                                                        <span className="text-slate-500">
+                                                            ({product.sku})
+                                                        </span>
+                                                    </li>
+                                                ),
+                                            )}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -231,15 +372,17 @@ const Registration: React.FC = () => {
                                 <label className="mb-1 block text-sm font-semibold text-slate-600">
                                     Sponsor Account
                                 </label>
-                            <SearchableSelect
-                                items={accounts.map((a) => ({
-                                    value: String(a.id),
-                                    label: `${a.member_name ?? a.account_name}${a.mid ? ` (${a.mid})` : ''}`,
-                                }))}
-                                value={form.data.sponsor_account_id}
-                                onValueChange={(v) => form.setData('sponsor_account_id', v)}
-                                placeholder="Auto-assign later"
-                            />
+                                <SearchableSelect
+                                    items={accounts.map((a) => ({
+                                        value: String(a.id),
+                                        label: `${a.member_name ?? a.account_name}${a.mid ? ` (${a.mid})` : ''}`,
+                                    }))}
+                                    value={form.data.sponsor_account_id}
+                                    onValueChange={(v) =>
+                                        form.setData('sponsor_account_id', v)
+                                    }
+                                    placeholder="Auto-assign later"
+                                />
                                 {form.errors.sponsor_account_id && (
                                     <p className="mt-1 text-xs text-red-600">
                                         {form.errors.sponsor_account_id}
@@ -361,11 +504,12 @@ const FormField: React.FC<FormFieldProps> = ({
             placeholder={placeholder}
             aria-invalid={!!error}
             className={cn(
-                'bg-white border-slate-300',
+                'border-slate-300 bg-white',
                 // Customized brand focus color (emerald)
                 'focus-visible:border-emerald-500 focus-visible:ring-emerald-500/50',
                 // Error styling
-                error && 'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/30'
+                error &&
+                    'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/30',
             )}
         />
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}

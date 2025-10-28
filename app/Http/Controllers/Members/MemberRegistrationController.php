@@ -7,6 +7,8 @@ use App\Models\Genealogy;
 use App\Models\MemberAccount;
 use App\Models\MemberPin;
 use App\Services\BinaryPairingService;
+use App\Models\Commission;
+use App\Services\CompensationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -151,14 +153,16 @@ class MemberRegistrationController extends Controller
 
             // Create the operational member account entry that links sponsor, placement,
             // and member profile together.
+            $sponsorUser = Auth::user();
             $memberAccount = MemberAccount::create([
-                'member_id' => $memberInfo->id,
+                'member_id' => $isExtension ? $sponsorUser->member_id : $memberInfo->id,
                 'account_name' => trim($validated['account_name']),
                 'dsponsor' => $sponsorMember->id,
                 'under_sponsor' => $parentAccount->id,
                 'node' => $nodeLabel,
                 'upper_nodes' => $upperNodes,
                 'member_type' => $isExtension ? 'extension' : 'member',
+                'is_main_account' => ! $isExtension,
                 'package_type' => 'standard',
                 'rank_id' => null,
             ]);
@@ -192,6 +196,24 @@ class MemberRegistrationController extends Controller
             $pin->save();
 
             app(BinaryPairingService::class)->handleNewPlacement($memberAccount, $genealogy);
+
+            // Award referral bonus to the placement parent account based on settings
+            $referralBonus = app(CompensationService::class)->referralBonus();
+            if (intval($referralBonus) > 0) {
+                $sponsorUser = Auth::user()->with('memberInfo')->first();
+                Commission::create([
+                    // It should go to the sponsoring user's primary account
+                    'member_account_id' => $sponsorUser->memberInfo->accounts->first()->id,
+                    'source' => 'referral',
+                    'amount' => $referralBonus,
+                    'level' => null,
+                    'percent' => null,
+                    'purchase_id' => null,
+                    'downline_account_id' => $memberAccount->id,
+                    'description' => 'Referral bonus for direct sponsor on new registration',
+                    'trans_no' => null,
+                ]);
+            }
 
             $this->writeControllerLog(self::LOG_FILE, 'info', 'Member successfully placed into genealogy.', ['new_member_account_id' => $memberAccount->id, 'genealogy_id' => $genealogy->id, 'member_pin_id' => $pin->id]);
 

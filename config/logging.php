@@ -127,6 +127,14 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'reverb' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/reverb.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 7,
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];

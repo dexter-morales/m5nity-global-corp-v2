@@ -1,6 +1,6 @@
 import type { BinaryNode } from '@/types/binary';
 import { router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import NodeDetailsModal from './components/NodeDetailsModal';
 
 interface Props {
@@ -23,6 +23,12 @@ export default function TreeView({
     levelGap = 120,
 }: Props) {
     const [selectedNode, setSelectedNode] = useState<BinaryNode | null>(null);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        const raf = requestAnimationFrame(() => setMounted(true));
+        return () => cancelAnimationFrame(raf);
+    }, []);
 
     const handleNodeClick = (node: BinaryNode) => {
         setSelectedNode(node);
@@ -103,7 +109,7 @@ export default function TreeView({
             <div
                 style={{
                     position: 'relative',
-                    height: maxY + 'px',
+                    minHeight: '50vh',
                     minWidth: `${minWidthPx}px`,
                 }}
             >
@@ -126,19 +132,21 @@ export default function TreeView({
                         const y2 = (to.yPx / maxY) * maxY;
                         // Since viewBox width is 100 units, x are already percentage points (0..100)
                         // Build a simple curved path (cubic bezier) from parent to child
-                        const path = `
-              M ${x1} ${y1}
-              C ${x1} ${(y1 + y2) / 2} ${x2} ${(y1 + y2) / 2} ${x2} ${y2}
-            `;
                         return (
                             <path
-                                key={i}
-                                d={path}
+                                key={`${c.fromId}-${c.toId}-${i}`}
+                                className="tree-connector"
+                                d={`M ${x1} ${y1} C ${x1} ${(y1 + y2) / 2} ${x2} ${(y1 + y2) / 2} ${x2} ${y2}`}
                                 fill="none"
-                                stroke="#9ca3af"
-                                strokeWidth={0.6}
-                                strokeDasharray="3 3"
+                                stroke="#bbf7d0"
+                                strokeWidth={2}
+                                strokeLinecap="round"
                                 vectorEffect="non-scaling-stroke"
+                                strokeDasharray="2 6"
+                                style={{
+                                    strokeDashoffset: mounted ? 0 : 120,
+                                    transition: `stroke-dashoffset 600ms ease ${i * 50}ms`,
+                                }}
                             />
                         );
                     })}
@@ -159,7 +167,11 @@ export default function TreeView({
                             key={p.node.id}
                             role="button"
                             tabIndex={0}
+                            className={`tree-node ${
+                                mounted ? 'tree-node--visible' : ''
+                            }`}
                             style={{
+                                paddingTop: 4,
                                 position: 'absolute',
                                 left: leftStyle,
                                 top: topStyle,
@@ -181,9 +193,12 @@ export default function TreeView({
                             }}
                         >
                             <div
+                                className="tree-node__avatar"
                                 style={{
                                     width: nodeSize,
                                     height: nodeSize,
+                                    minWidth: nodeSize,
+                                    minHeight: nodeSize,
                                     borderRadius: '9999px',
                                     border: '4px solid #10b981', // green border
                                     background: '#ecfdf5',
@@ -191,6 +206,7 @@ export default function TreeView({
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     overflow: 'hidden',
+                                    flexShrink: 0,
                                 }}
                             >
                                 {/* Avatar (fallback placeholder) */}
@@ -204,13 +220,14 @@ export default function TreeView({
                                         `User ${p.node.user_id}`
                                     }
                                     style={{
-                                        width: nodeSize * 0.6,
-                                        height: nodeSize * 0.6,
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
                                         borderRadius: '9999px',
                                     }}
                                 />
                                 {/* small badge on top-right */}
-                                <div
+                                {/* <div
                                     style={{
                                         position: 'absolute',
                                         width: 18,
@@ -228,7 +245,7 @@ export default function TreeView({
                                     }}
                                 >
                                     {'\u2713'}
-                                </div>
+                                </div> */}
                             </div>
 
                             <div

@@ -64,6 +64,7 @@ class BinaryTestPairingCommand extends Command
                     'node' => strtoupper(substr($position, 0, 1)).'2',
                     'upper_nodes' => $upper,
                     'member_type' => 'member',
+                    'is_main_account' => false,
                     'package_type' => 'standard',
                 ]);
 
@@ -86,4 +87,3 @@ class BinaryTestPairingCommand extends Command
         return self::SUCCESS;
     }
 }
-

@@ -40,9 +40,10 @@ class GenealogySeeder extends Seeder
         // Create root member info
         $rootMemberId = DB::table('members_info')->insertGetId([
             'user_id' => $rootUserId,
+            'MID' => '25PH0000001',
             'email' => 'root@binary.com',
-            'fname' => 'Root',
-            'lname' => 'Node',
+            'fname' => 'Company',
+            'lname' => 'Account',
             'is_active' => true,
             'kick_start_token' => null,
             'created_at' => now(),
@@ -52,12 +53,13 @@ class GenealogySeeder extends Seeder
         // Create root account
         $rootAccountId = DB::table('members_account')->insertGetId([
             'member_id' => $rootMemberId,
-            'account_name' => 'ROOT_NODE',
-            'dsponsor' => null,
+            'account_name' => 'M5nity Global',
+            'dsponsor' => 1,
             'under_sponsor' => null,
             'node' => 'root',
             'upper_nodes' => json_encode([]),
             'member_type' => 'root',
+            'is_main_account' => true,
             'package_type' => 'standard',
             'rank_id' => null,
             'remarks' => null,
@@ -133,6 +135,7 @@ class GenealogySeeder extends Seeder
         //                 'node' => strtoupper($pos[0]).$level,
         //                 'upper_nodes' => json_encode($upperNodes),
         //                 'member_type' => 'member',
+        //                 'is_main_account' => false,
         //                 'package_type' => 'standard',
         //                 'rank_id' => null,
         //                 'remarks' => null,

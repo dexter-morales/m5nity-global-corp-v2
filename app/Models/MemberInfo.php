@@ -54,4 +54,49 @@ class MemberInfo extends Model
     {
         return $this->hasMany(MemberAccount::class, 'member_id');
     }
+
+    public function encashments()
+    {
+        return $this->hasMany(Encashment::class, 'member_id');
+    }
+
+    /**
+     * Calculate the total income from all sources.
+     */
+    public function getTotalIncome(): float
+    {
+        $accountIds = $this->accounts()->pluck('id')->toArray();
+
+        // Income from pairing/binary
+        $pairingIncome = MemberIncomeHistory::whereIn('ancestor_account_id', $accountIds)->sum('amount');
+
+        // Income from commissions
+        $commissionIncome = Commission::whereIn('member_account_id', $accountIds)->sum('amount');
+
+        return (float) ($pairingIncome + $commissionIncome);
+    }
+
+    /**
+     * Calculate the total approved/processed/released encashments.
+     */
+    public function getTotalEncashed(): float
+    {
+        return (float) $this->encashments()
+            ->whereIn('status', ['approved', 'processed', 'released'])
+            ->sum('amount');
+    }
+
+    /**
+     * Calculate the available balance for encashment.
+     */
+    public function getAvailableBalance(): float
+    {
+        $totalIncome = $this->getTotalIncome();
+        $totalEncashed = $this->getTotalEncashed();
+        $pendingEncashments = (float) $this->encashments()
+            ->where('status', 'pending')
+            ->sum('amount');
+
+        return max(0, $totalIncome - $totalEncashed - $pendingEncashments);
+    }
 }
